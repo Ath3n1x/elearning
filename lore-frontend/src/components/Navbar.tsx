@@ -8,6 +8,7 @@ const navLinks = [
   { to: '/chat', label: 'Chatbot' },
   { to: '/videos', label: 'Videos' },
   { to: '/library', label: 'My Watched Videos' },
+  { to: '/reminders', label: 'Reminders' },
 ];
 
 const Navbar: React.FC = () => {

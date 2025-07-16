@@ -10,6 +10,7 @@ import QuizResults from './pages/QuizResults';
 import Chatbot from './pages/Chatbot';
 import Videos from './pages/Videos';
 import WatchedLibrary from './pages/WatchedLibrary';
+import Reminders from './pages/Reminders';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuth = !!localStorage.getItem('token');
@@ -81,6 +82,13 @@ const App: React.FC = () => {
           </ProtectedRoute>
         } />
         <Route path="/library" element={<WatchedLibrary />} />
+        <Route path="/reminders" element={
+          <ProtectedRoute>
+            <Layout>
+              <Reminders />
+            </Layout>
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<div className="flex items-center justify-center min-h-screen text-2xl">Welcome to Lore</div>} />
       </Routes>
     </BrowserRouter>
