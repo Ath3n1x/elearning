@@ -21,9 +21,9 @@ const Navbar: React.FC = () => {
     const fetchUser = async () => {
       try {
         const res = await api.get('/api/user/me');
-        const name = res.data?.name || 'User';
-        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3B82F6&color=fff&size=128`;
-        setUser({ name, avatar });
+        const username = res.data?.username || 'User';
+        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=3B82F6&color=fff&size=128`;
+        setUser({ name: username, avatar });
       } catch {
         setUser({ name: 'User', avatar: '' });
       } finally {

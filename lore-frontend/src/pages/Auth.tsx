@@ -21,18 +21,31 @@ const Auth: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post("/auth/login", loginData);
+      const params = new URLSearchParams();
+      params.append("username", loginData.email); // use email as username
+      params.append("password", loginData.password);
+      const res = await api.post("/auth/login", params, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
       localStorage.setItem("token", res.data.access_token);
       // Fetch user profile to check completeness
       const userRes = await api.get("/api/user/me");
-      const { name, age, grade } = userRes.data || {};
-      if (name && age && grade) {
+      const { username, age, grade } = userRes.data || {};
+      if (username && age && grade) {
         navigate("/dashboard");
       } else {
         navigate("/profile");
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Login failed");
+      let msg = "Login failed";
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          msg = err.response.data.detail.map((d: any) => d.msg).join(", ");
+        } else {
+          msg = err.response.data.detail;
+        }
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

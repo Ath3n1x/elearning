@@ -68,7 +68,10 @@ const Profile: React.FC = () => {
         grade: form.grade,
       });
       setSuccess('Profile saved! Redirecting...');
-      setTimeout(() => navigate('/dashboard'), 1200);
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+        window.location.reload(); // Force reload to refetch user data
+      }, 1200);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Profile creation failed');
     } finally {

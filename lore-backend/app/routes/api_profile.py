@@ -14,11 +14,11 @@ def get_db():
     finally:
         db.close()
 
-@api_profile_router.get("/api/user/me", response_model=User)
+@api_profile_router.get("/api/user/me", response_model=User, response_model_by_alias=True)
 def api_user_me(current_user = Depends(get_current_user)):
-    return current_user
+    return User.from_orm(current_user)
 
-@api_profile_router.post("/api/profile", response_model=User)
+@api_profile_router.post("/api/profile", response_model=User, response_model_by_alias=True)
 async def api_profile_create(request: Request, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     data = await request.json()
     name = data.get("name")
@@ -39,4 +39,4 @@ async def api_profile_create(request: Request, db: Session = Depends(get_db), cu
         user.grade = grade
     db.commit()
     db.refresh(user)
-    return user 
+    return User.from_orm(user) 

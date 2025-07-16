@@ -13,7 +13,6 @@ class UserCreate(BaseModel):
 
 class User(BaseModel):
     id: int
-    username: str
     name: str = Field(..., alias="username")
     email: str
     is_active: bool
@@ -22,5 +21,5 @@ class User(BaseModel):
     grade: str | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         allow_population_by_field_name = True

@@ -64,15 +64,16 @@ const performanceOptions = {
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<{ name: string; grade: string; avatar: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<{ streak: number; badges: { name: string; earned: boolean }[] }>({ streak: 0, badges: [] });
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await api.get('/api/user/me');
-        const name = res.data?.name || 'User';
+        const username = res.data?.username || 'User';
         const grade = res.data?.grade || '';
-        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3B82F6&color=fff&size=128`;
-        setUser({ name, grade, avatar });
+        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=3B82F6&color=fff&size=128`;
+        setUser({ name: username, grade, avatar });
       } catch {
         setUser({ name: 'User', grade: '', avatar: '' });
       } finally {
@@ -80,6 +81,16 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchUser();
+    // Fetch streak and badges
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/profile/api/user/stats');
+        setStats(res.data);
+      } catch {
+        setStats({ streak: 0, badges: [] });
+      }
+    };
+    fetchStats();
   }, []);
 
   if (loading) {
@@ -134,15 +145,13 @@ const Dashboard: React.FC = () => {
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Streaks & Badges</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold shadow-sm">
-              <span className="text-xl">🔥</span> 5-day Streak
-            </div>
-            <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg font-semibold shadow-sm">
-              <span className="text-xl">🏅</span> Quiz Master
-            </div>
-            <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg font-semibold shadow-sm">
-              <span className="text-xl">⭐</span> Consistent Learner
-            </div>
+            {stats.badges.length > 0 ? stats.badges.map((badge, i) => (
+              <div key={badge.name} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-sm ${badge.earned ? (i === 0 ? 'bg-green-100 text-green-700' : i === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700') : 'bg-gray-100 text-gray-400'}`}>
+                <span className="text-xl">{badge.name.includes('Streak') ? '🔥' : badge.name === 'Quiz Master' ? '🏅' : '⭐'}</span> {badge.name}
+              </div>
+            )) : (
+              <div className="col-span-3 text-gray-400">No badges yet.</div>
+            )}
           </div>
         </section>
       </div>

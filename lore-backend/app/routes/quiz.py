@@ -4,6 +4,8 @@ from ..schemas.quiz import Quiz, QuizCreate
 from ..models import quiz as quiz_model
 from ..database import SessionLocal
 from typing import List, Any
+from ..models.quiz_result import QuizResult
+from ..utils.auth import get_current_user
 
 router = APIRouter(prefix="/quizzes", tags=["quizzes"])
 
@@ -17,16 +19,27 @@ def get_db():
 @router.post("/generate")
 def generate_quiz(
     num_questions: int = Body(..., embed=True),
-    params: dict = Body({}, embed=True),
+    chapter: str = Body(None, embed=True),
+    question_type: str = Body(None, embed=True),
+    difficulty: str = Body(None, embed=True),
 ):
-    if num_questions < 1 or num_questions > 50:
-        raise HTTPException(status_code=400, detail="Number of questions must be between 1 and 50.")
-    # Placeholder: RAG logic will generate unique questions here
-    questions = [
-        {"question": f"Question {i+1}", "options": ["A", "B", "C", "D"], "answer": 0}
-        for i in range(num_questions)
-    ]
-    return {"questions": questions}
+    # Forward these fields to the RAG model when integrated
+    # For now, just return them in the response for testing
+    # Replace this with actual RAG call when ready
+    return {
+        "questions": [
+            {
+                "question": f"Sample {question_type or 'mcq'} question {i+1} for {chapter or 'chapter'} ({difficulty or 'medium'})",
+                "options": ["A", "B", "C", "D"] if (question_type or 'mcq') == 'mcq' else None,
+                "answer": 0
+            }
+            for i in range(num_questions)
+        ],
+        "chapter": chapter,
+        "question_type": question_type,
+        "difficulty": difficulty,
+        "num_questions": num_questions
+    }
 
 @router.post("/", response_model=Quiz)
 def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db)):
@@ -66,3 +79,30 @@ def delete_quiz(quiz_id: int, db: Session = Depends(get_db)):
     db.delete(db_quiz)
     db.commit()
     return {"ok": True}
+
+@router.post("/submit")
+def submit_quiz(
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    # data: {quiz_id: int, answers: List[int], questions: List[{answer: int, ...}]}
+    quiz_id = data.get("quiz_id")
+    answers = data.get("answers")
+    questions = data.get("questions")
+    if not quiz_id or answers is None or questions is None:
+        raise HTTPException(status_code=400, detail="Missing quiz_id, answers, or questions")
+    if len(answers) != len(questions):
+        raise HTTPException(status_code=400, detail="Answers and questions length mismatch")
+    # Calculate score
+    correct = 0
+    for i, q in enumerate(questions):
+        if answers[i] == q.get("answer"):
+            correct += 1
+    score = (correct / len(questions)) * 100 if questions else 0.0
+    # Store result
+    quiz_result = QuizResult(user_id=current_user.id, quiz_id=quiz_id, score=score)
+    db.add(quiz_result)
+    db.commit()
+    db.refresh(quiz_result)
+    return {"score": score, "correct": correct, "total": len(questions)}

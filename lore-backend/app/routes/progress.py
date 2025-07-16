@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from ..schemas.progress import Progress, ProgressCreate
 from ..models import progress as progress_model
 from ..database import SessionLocal
+from datetime import datetime
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
@@ -16,6 +17,8 @@ def get_db():
 @router.post("/", response_model=Progress)
 def create_progress(progress: ProgressCreate, db: Session = Depends(get_db)):
     db_progress = progress_model.Progress(**progress.dict())
+    if progress.completed:
+        db_progress.completed_at = datetime.utcnow()
     db.add(db_progress)
     db.commit()
     db.refresh(db_progress)
@@ -37,8 +40,12 @@ def update_progress(progress_id: int, progress: ProgressCreate, db: Session = De
     db_progress = db.query(progress_model.Progress).filter(progress_model.Progress.id == progress_id).first()
     if not db_progress:
         raise HTTPException(status_code=404, detail="Progress not found")
+    was_completed = db_progress.completed
     for key, value in progress.dict().items():
         setattr(db_progress, key, value)
+    # Set completed_at if just completed
+    if progress.completed and not was_completed:
+        db_progress.completed_at = datetime.utcnow()
     db.commit()
     db.refresh(db_progress)
     return db_progress
