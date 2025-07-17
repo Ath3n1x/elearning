@@ -38,7 +38,7 @@ const QuizSetup: React.FC = () => {
 
   const handleDurationChange = (value: string) => {
     if (value === 'custom') {
-      setForm({ ...form, duration: '', customDuration: '' });
+      setForm({ ...form, duration: 0, customDuration: '' });
     } else {
       setForm({ ...form, duration: Number(value), customDuration: '' });
     }
@@ -58,14 +58,27 @@ const QuizSetup: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const params = { ...form };
-      const res = await api.post('/quizzes/generate', {
+      // Call the backend to generate questions
+      const response = await api.post('/quizzes/generate', {
         num_questions: form.numQuestions,
-        params,
+        chapter: form.chapter,
+        question_type: form.type.toLowerCase(),
+        difficulty: form.difficulty.toLowerCase(),
       });
-      navigate('/quiz/live', { state: { ...form, questions: res.data.questions, duration: form.duration } });
+      
+      console.log('Generated questions:', response.data);
+      
+      // Navigate to live quiz with the generated questions
+      navigate('/quiz/live', { 
+        state: { 
+          questions: response.data.questions,
+          duration: form.duration,
+          quizConfig: form
+        } 
+      });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to generate quiz');
+      console.error('Quiz generation error:', err);
+      setError(err.response?.data?.detail || 'Failed to generate quiz. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +119,7 @@ const QuizSetup: React.FC = () => {
               ))}
               <option value="custom">Custom...</option>
             </select>
-            {form.customDuration !== '' || form.duration === '' ? (
+            {form.customDuration !== '' || form.duration === 0 ? (
               <input
                 type="number"
                 min={1}
@@ -120,7 +133,7 @@ const QuizSetup: React.FC = () => {
             ) : null}
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md transition-colors duration-200" disabled={loading}>{loading ? 'Starting...' : 'Start Quiz'}</button>
+          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md transition-colors duration-200" disabled={loading}>{loading ? 'Generating Quiz...' : 'Start Quiz'}</button>
         </form>
       </div>
     </div>

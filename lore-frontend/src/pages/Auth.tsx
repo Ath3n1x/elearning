@@ -34,7 +34,7 @@ const Auth: React.FC = () => {
       if (username && age && grade) {
         navigate("/dashboard");
       } else {
-        navigate("/profile");
+      navigate("/profile");
       }
     } catch (err: any) {
       let msg = "Login failed";
